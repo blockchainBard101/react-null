@@ -1,0 +1,51 @@
+# Template-Version: 1
+name: Build and Package React App
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_session_id:
+        description: 'Backend build session id'
+        required: true
+        type: string
+      artifact_name:
+        description: 'Artifact name to upload'
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build React App
+        run: npm run build
+
+      - name: Verify Build Output
+        run: |
+          if [ ! -d "dist" ]; then
+            echo "ERROR: Dist directory not found"
+            exit 1
+          fi
+          echo "SUCCESS: Build directory verified for session ${{ inputs.build_session_id }}"
+          ls -lah dist/ | head -10
+
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          path: dist/
+          retention-days: 7
